@@ -1,4 +1,4 @@
-# tween.lua
+# mltween.lua
 
 mltween.lua is a small library to perform [tweening](http://en.wikipedia.org/wiki/Tweening) in Lua. It has a minimal
 interface, and it comes with several easing functions.
