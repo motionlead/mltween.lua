@@ -1,9 +1,27 @@
 # tween.lua
 
-[![Build Status](https://travis-ci.org/kikito/tween.lua.svg?branch=master)](https://travis-ci.org/kikito/tween.lua)
-
-tween.lua is a small library to perform [tweening](http://en.wikipedia.org/wiki/Tweening) in Lua. It has a minimal
+mltween.lua is a small library to perform [tweening](http://en.wikipedia.org/wiki/Tweening) in Lua. It has a minimal
 interface, and it comes with several easing functions.
+
+It is based on the [tween.lua](https://github.com/kikito/tween.lua) library from [Enrique Garcia](https://github.com/kikito)
+
+# Update
+
+We added the possibility to loop animations. In the former library you create twee like this :
+
+``` lua
+local t = tween.new(duration, subject, target, [easing])
+```
+In ours, you use it this way :
+
+``` lua
+local t = tween.new(duration, subject, target, [easing, looptype])
+```
+
+The looptype can have those value :
+* *normal* Which is no loop
+* *loop* Will perform the same animation over time
+* *loopback* Will perform the animation and its inverse over time
 
 # Examples
 
@@ -30,24 +48,12 @@ local fadeTween = tween.new(2, properties, {bgcolor = {0,0,0}, fgcolor={255,0,0}
 fadeTween:update(dt)
 ```
 
-# Demo
-
-There is a demo in the "demo" branch of this repo:
-
-https://github.com/kikito/tween.lua/tree/demo
-
-![demo image](https://kikito.github.io/tween.lua/img/tween-demo.gif)
-
-You will need [LÖVE](http://love2d.org) to execute the demo.
-
-In the animation above, you can see how the user can move time "forwards or backwards" by pressing and releasing the space key.
-
 # Interface
 
 ## Tween creation
 
 ``` lua
-local t = tween.new(duration, subject, target, [easing])
+local t = tween.new(duration, subject, target, easing, looptype)
 ```
 
 Creates a new tween.
@@ -56,6 +62,7 @@ Creates a new tween.
 * `subject` must be a table with at least one key-value. Its values will be gradually changed by the tween until they look like `target`. All the values must be numbers, or tables with numbers.
 * `target` must be a table with at least the same keys as `subject`. Other keys will be ignored.
 * `easing` can be either a function or a function name (see the easing section below). It's default value is `'linear'`
+* `looptype` can be either *normal*, *loop*, *loopback*
 * `t` is the object that must be used to perform the changes - see the "Tween methods" section below.
 
 This function only creates and returns the tween. It must be captured in a variable and updated via `t:update(dt)` in order for the changes to take place.
@@ -186,12 +193,4 @@ https://github.com/emmanueloga/easing
 
 See the LICENSE.txt file for details.
 
-# Changelog
-
-v2.0.0:
-
-* the library no longer has "an internal list of tweens". Instead, `tween.new` returns an individual tween, which
-  must be updated individually with `t:update(dt)`
-* tweens can go forwards and backwards (trying to set the internal clock to a negative number makes it zero)
-
-
+The Library has been fork from [tween.lua](https://github.com/kikito/tween.lua) library from [Enrique Garcia](https://github.com/kikito)

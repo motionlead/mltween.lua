@@ -5,7 +5,7 @@ local tween = {
   _LICENSE     = [[
     MIT LICENSE
 
-    Copyright (c) 2014 Enrique Garc√≠a Cota, Yuichi Tateno, Emmanuel Oga
+    Copyright (c) 2014 Enrique García Cota, Yuichi Tateno, Emmanuel Oga
 
     Permission is hereby granted, free of charge, to any person obtaining a
     copy of this software and associated documentation files (the
@@ -241,6 +241,20 @@ tween.easing = {
   inBounce  = inBounce,  outBounce  = outBounce,  inOutBounce  = inOutBounce,  outInBounce  = outInBounce
 }
 
+tween.easingreverse = {
+  linear    = linear,
+  inQuad    = outQuad,    outQuad    = inQuad,    inOutQuad    = outInQuad,    outInQuad    = inOutQuad,
+  inCubic   = outCubic,   outCubic   = inCubic,   inOutCubic   = outInCubic,   outInCubic   = inOutCubic,
+  inQuart   = outQuart,   outQuart   = inQuart,   inOutQuart   = outInQuart,   outInQuart   = inOutQuart,
+  inQuint   = outQuint,   outQuint   = inQuint,   inOutQuint   = outInQuint,   outInQuint   = inOutQuint,
+  inSine    = outSine,    outSine    = inSine,    inOutSine    = outInSine,    outInSine    = inOutSine,
+  inExpo    = outExpo,    outExpo    = inExpo,    inOutExpo    = outInExpo,    outInExpo    = inOutExpo,
+  inCirc    = outCirc,    outCirc    = inCirc,    inOutCirc    = outInCirc,    outInCirc    = inOutCirc,
+  inElastic = outElastic, outElastic = inElastic, inOutElastic = outInElastic, outInElastic = inOutElastic,
+  inBack    = outBack,    outBack    = inBack,    inOutBack    = outInBack,    outInBack    = inOutBack,
+  inBounce  = outBounce,  outBounce  = inBounce,  inOutBounce  = outInBounce,  outInBounce  = inOutBounce
+}
+
 
 
 -- private stuff
@@ -298,6 +312,18 @@ local function getEasingFunction(easing)
   return easing
 end
 
+local function getReverseEasingFunction(easing)
+  easing = easing or "linear"
+  if type(easing) == 'string' then
+    local name = easing
+    easing = tween.easingreverse[name]
+    if type(easing) ~= 'function' then
+      error("The easing function name '" .. name .. "' is invalid")
+    end
+  end
+  return easing
+end
+
 local function performEasingOnSubject(subject, target, initial, clock, duration, easing)
   local t,b,c,d
   for k,v in pairs(target) do
@@ -316,25 +342,36 @@ local Tween = {}
 local Tween_mt = {__index = Tween}
 
 function Tween:set(clock)
-  assert(type(clock) == 'number', "clock must be a positive number or 0")
+    assert(type(clock) == 'number', "clock must be a positive number or 0")
+    
+    self.clock = clock
 
-  self.clock = clock
-
-  if self.clock <= 0 then
-
-    self.clock = 0
-    copyTables(self.subject, self.initial)
-
-  elseif self.clock >= self.duration then -- the tween has expired
-
-    self.clock = self.duration
-    copyTables(self.subject, self.target)
-
-  else
-
-    performEasingOnSubject(self.subject, self.target, self.initial, self.clock, self.duration, self.easing)
-
-  end
+    if self.clock <= 0 then
+        self.clock = 0
+        copyTables(self.subject, self.initial)
+    elseif self.clock >= self.duration then -- the tween has expired
+        if self.state == 'loopback' or self.state == 'loop' then
+            if self.reverseEasing then -- If reverse, then inverse the easing
+                if self.state == 'loop' then -- if loop putting to normal to end it
+                    self.clock = 0
+                else
+                    self.clock = 0
+                    local easing = self.easing
+                    self.easing = self.reverseEasing
+                    self.reverseEasing = easing
+                    local initial = self.initial
+                    self.initial = self.target
+                    self.target = initial
+                end
+                performEasingOnSubject(self.subject, self.target, self.initial, self.clock, self.duration, self.easing)
+            end
+        else
+            self.clock = self.duration
+            copyTables(self.subject, self.target)
+        end
+    else
+        performEasingOnSubject(self.subject, self.target, self.initial, self.clock, self.duration, self.easing)
+    end
 
   return self.clock >= self.duration
 end
@@ -351,18 +388,30 @@ end
 
 -- Public interface
 
-function tween.new(duration, subject, target, easing)
-  easing = getEasingFunction(easing)
-  checkNewParams(duration, subject, target, easing)
-  return setmetatable({
-    duration  = duration,
-    subject   = subject,
-    target    = target,
-    easing    = easing,
-
-    initial   = copyTables({},target,subject),
-    clock     = 0
-  }, Tween_mt)
+function tween.new(duration, subject, target, easingString, state)
+    easing = getEasingFunction(easingString)
+    reverseEasing = nil
+    checkNewParams(duration, subject, target, easing)
+    if state then
+        if state == 'loop' or state == 'loopback' then
+            reverseEasing = getReverseEasingFunction(easingString)
+            checkNewParams(duration, subject, target, reverseEasing)
+        end
+    else
+        state = 'normal'
+    end
+    
+    return setmetatable({
+        duration        = duration,
+        subject         = subject,
+        target          = target,
+        easing          = easing,
+        reverseEasing   = reverseEasing,
+        state           = state,
+        
+        initial         = copyTables({},target,subject),
+        clock           = 0
+    }, Tween_mt)
 end
 
 return tween
